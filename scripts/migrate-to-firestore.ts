@@ -73,7 +73,7 @@ async function migrateToFirestore() {
     console.log('📊 Jobsコレクションへの移行中...');
     const jobs = sqliteDb.prepare('SELECT * FROM jobs').all() as any[];
     
-    const batch = db.batch();
+    let batch = db.batch();
     let jobCount = 0;
     
     for (const job of jobs) {
@@ -98,6 +98,7 @@ async function migrateToFirestore() {
       if (jobCount % 500 === 0) {
         await batch.commit();
         console.log(`   ✅ ${jobCount}件の求人を移行しました...`);
+        batch = db.batch(); // 新しいバッチを作成
       }
     }
     
@@ -112,7 +113,7 @@ async function migrateToFirestore() {
     console.log('👥 Usersコレクションへの移行中...');
     const users = sqliteDb.prepare('SELECT * FROM users').all() as any[];
     
-    const userBatch = db.batch();
+    let userBatch = db.batch();
     let userCount = 0;
     
     for (const user of users) {
@@ -127,6 +128,7 @@ async function migrateToFirestore() {
       if (userCount % 500 === 0) {
         await userBatch.commit();
         console.log(`   ✅ ${userCount}件のユーザーを移行しました...`);
+        userBatch = db.batch(); // 新しいバッチを作成
       }
     }
     
@@ -141,7 +143,7 @@ async function migrateToFirestore() {
     const interactions = sqliteDb.prepare('SELECT * FROM user_interactions').all() as any[];
     
     if (interactions.length > 0) {
-      const interactionBatch = db.batch();
+      let interactionBatch = db.batch();
       let interactionCount = 0;
       
       for (const interaction of interactions) {
@@ -159,6 +161,7 @@ async function migrateToFirestore() {
         if (interactionCount % 500 === 0) {
           await interactionBatch.commit();
           console.log(`   ✅ ${interactionCount}件のインタラクションを移行しました...`);
+          interactionBatch = db.batch(); // 新しいバッチを作成
         }
       }
       
