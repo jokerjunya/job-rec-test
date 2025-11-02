@@ -1,6 +1,7 @@
-import { Job, User } from '@/lib/schema';
+import { Job, User, UserInteraction } from '@/lib/schema';
 import fs from 'fs';
 import path from 'path';
+import db from './db';
 
 interface JobsData {
   jobs: Job[];
@@ -44,30 +45,95 @@ export function getJobById(jobId: number): Job | undefined {
   return getJobs().find(job => job.job_id === jobId);
 }
 
-// インタラクションはメモリに保存（サーバーレス環境では永続化しない）
-const interactions: Map<string, Array<{ user_id: number; job_id: number; action: string; timestamp: string }>> = new Map();
-
+/**
+ * ユーザーのインタラクション（いいね/スキップ）をデータベースに保存
+ * @param userId ユーザーID
+ * @param jobId 求人ID
+ * @param action アクション ('like', 'dislike', 'skip')
+ */
 export function saveInteraction(userId: number, jobId: number, action: string): void {
-  const key = `user_${userId}`;
-  if (!interactions.has(key)) {
-    interactions.set(key, []);
+  try {
+    // ユーザーと求人が存在するか確認（外部キー制約エラーを防ぐ）
+    const userExists = db.prepare('SELECT 1 FROM users WHERE user_id = ?').get(userId);
+    const jobExists = db.prepare('SELECT 1 FROM jobs WHERE job_id = ?').get(jobId);
+    
+    if (!userExists) {
+      console.warn(`User ${userId} does not exist in database. Creating user...`);
+      // ユーザーが存在しない場合は作成（デフォルトユーザー用）
+      const insertUser = db.prepare('INSERT OR IGNORE INTO users (user_id, user_skills) VALUES (?, ?)');
+      insertUser.run(userId, '');
+    }
+    
+    if (!jobExists) {
+      throw new Error(`Job ${jobId} does not exist in database`);
+    }
+    
+    // インタラクションを保存
+    const stmt = db.prepare(`
+      INSERT INTO user_interactions (user_id, job_id, action, timestamp)
+      VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+    `);
+    
+    stmt.run(userId, jobId, action);
+  } catch (error) {
+    console.error('Error saving interaction to database:', error);
+    throw error;
   }
-  
-  const userInteractions = interactions.get(key)!;
-  userInteractions.push({
-    user_id: userId,
-    job_id: jobId,
-    action,
-    timestamp: new Date().toISOString(),
-  });
 }
 
-export function getUserInteractions(userId: number): Array<{ user_id: number; job_id: number; action: string; timestamp: string }> {
-  const key = `user_${userId}`;
-  return interactions.get(key) || [];
+/**
+ * ユーザーのインタラクション履歴をデータベースから取得
+ * @param userId ユーザーID
+ * @returns インタラクション履歴の配列
+ */
+export function getUserInteractions(userId: number): UserInteraction[] {
+  try {
+    const stmt = db.prepare(`
+      SELECT interaction_id, user_id, job_id, action, timestamp
+      FROM user_interactions
+      WHERE user_id = ?
+      ORDER BY timestamp DESC
+    `);
+    
+    const rows = stmt.all(userId) as Array<{
+      interaction_id: number;
+      user_id: number;
+      job_id: number;
+      action: string;
+      timestamp: string;
+    }>;
+    
+    return rows.map(row => ({
+      interaction_id: row.interaction_id,
+      user_id: row.user_id,
+      job_id: row.job_id,
+      action: row.action as 'like' | 'dislike' | 'skip',
+      timestamp: row.timestamp,
+    }));
+  } catch (error) {
+    console.error('Error fetching user interactions from database:', error);
+    return [];
+  }
 }
 
+/**
+ * ユーザーがインタラクションした求人IDのリストを取得
+ * @param userId ユーザーID
+ * @returns 求人IDの配列
+ */
 export function getUserInteractedJobIds(userId: number): number[] {
-  return getUserInteractions(userId).map(i => i.job_id);
+  try {
+    const stmt = db.prepare(`
+      SELECT DISTINCT job_id
+      FROM user_interactions
+      WHERE user_id = ?
+    `);
+    
+    const rows = stmt.all(userId) as Array<{ job_id: number }>;
+    return rows.map(row => row.job_id);
+  } catch (error) {
+    console.error('Error fetching interacted job IDs from database:', error);
+    return [];
+  }
 }
 

@@ -40,7 +40,7 @@ export default function Home() {
 
     try {
       // インタラクションを保存
-      await fetch('/api/interactions', {
+      const response = await fetch('/api/interactions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -52,7 +52,12 @@ export default function Home() {
         }),
       });
 
-      // 次の求人に進む
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to save interaction');
+      }
+
+      // 保存成功後、次の求人に進む
       if (currentIndex < jobs.length - 1) {
         setCurrentIndex(currentIndex + 1);
       } else {
@@ -61,6 +66,13 @@ export default function Home() {
       }
     } catch (error) {
       console.error('Error saving interaction:', error);
+      // エラーが発生した場合でも、ユーザーエクスペリエンスのために次の求人に進む
+      // （ネットワークエラーの場合、後で再試行できるようにする）
+      if (currentIndex < jobs.length - 1) {
+        setCurrentIndex(currentIndex + 1);
+      } else {
+        await fetchJobs();
+      }
     }
   };
 

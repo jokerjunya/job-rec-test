@@ -59,10 +59,7 @@ export async function GET(request: NextRequest) {
       interactions = interactions.filter(i => i.job_id === parseInt(jobId));
     }
 
-    // タイムスタンプで降順ソート
-    interactions.sort((a, b) => 
-      new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-    );
+    // getUserInteractionsは既にタイムスタンプで降順ソートされている
 
     return NextResponse.json({
       interactions,
