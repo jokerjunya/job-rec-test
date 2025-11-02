@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/lib/db';
+import { getJobById } from '@/lib/data';
 import { Job } from '@/lib/schema';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(
   request: NextRequest,
@@ -16,7 +18,7 @@ export async function GET(
       );
     }
 
-    const job = db.prepare('SELECT * FROM jobs WHERE job_id = ?').get(jobId) as Job | undefined;
+    const job = getJobById(jobId);
 
     if (!job) {
       return NextResponse.json(
@@ -34,4 +36,3 @@ export async function GET(
     );
   }
 }
-

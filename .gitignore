@@ -42,3 +42,6 @@ next-env.d.ts
 
 # csv data (large file)
 /Job Datsset.csv
+
+# jobs.json is included in repo (needed for Netlify deployment)
+

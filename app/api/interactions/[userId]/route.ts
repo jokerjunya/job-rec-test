@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/lib/db';
+import { getUserInteractions } from '@/lib/data';
 import { UserInteraction } from '@/lib/schema';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(
   request: NextRequest,
@@ -16,9 +18,12 @@ export async function GET(
       );
     }
 
-    const interactions = db
-      .prepare('SELECT * FROM user_interactions WHERE user_id = ? ORDER BY timestamp DESC')
-      .all(userId) as UserInteraction[];
+    const interactions = getUserInteractions(userId);
+
+    // タイムスタンプで降順ソート
+    interactions.sort((a, b) => 
+      new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    );
 
     return NextResponse.json({
       interactions,
@@ -32,4 +37,3 @@ export async function GET(
     );
   }
 }
-

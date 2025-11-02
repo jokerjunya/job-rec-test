@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/lib/db';
+import { saveInteraction, getUserInteractions } from '@/lib/data';
 import { UserInteraction } from '@/lib/schema';
+
+export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,16 +25,11 @@ export async function POST(request: NextRequest) {
     }
 
     // インタラクションを保存
-    const insert = db.prepare(`
-      INSERT INTO user_interactions (user_id, job_id, action, timestamp)
-      VALUES (?, ?, ?, datetime('now'))
-    `);
-
-    const result = insert.run(user_id, job_id, action);
+    saveInteraction(user_id, job_id, action);
 
     return NextResponse.json({
       success: true,
-      interaction_id: result.lastInsertRowid,
+      message: 'Interaction saved',
     });
   } catch (error) {
     console.error('Error saving interaction:', error);
@@ -56,17 +53,16 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    let query = 'SELECT * FROM user_interactions WHERE user_id = ?';
-    const params: any[] = [parseInt(userId)];
+    let interactions = getUserInteractions(parseInt(userId));
 
     if (jobId) {
-      query += ' AND job_id = ?';
-      params.push(parseInt(jobId));
+      interactions = interactions.filter(i => i.job_id === parseInt(jobId));
     }
 
-    query += ' ORDER BY timestamp DESC';
-
-    const interactions = db.prepare(query).all(...params) as UserInteraction[];
+    // タイムスタンプで降順ソート
+    interactions.sort((a, b) => 
+      new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    );
 
     return NextResponse.json({
       interactions,
@@ -80,4 +76,3 @@ export async function GET(request: NextRequest) {
     );
   }
 }
-

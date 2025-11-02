@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/lib/db';
+import { getJobs, getUserInteractedJobIds } from '@/lib/data';
 import { Job } from '@/lib/schema';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
@@ -9,26 +11,23 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '10');
     const offset = parseInt(searchParams.get('offset') || '0');
 
-    let query = 'SELECT * FROM jobs';
-    const params: any[] = [];
+    let jobs: Job[] = getJobs();
 
     // ユーザーが指定されている場合、既にインタラクションした求人を除外
     if (userId) {
-      query = `
-        SELECT j.* FROM jobs j
-        WHERE j.job_id NOT IN (
-          SELECT job_id FROM user_interactions WHERE user_id = ?
-        )
-        ORDER BY j.match_score DESC
-        LIMIT ? OFFSET ?
-      `;
-      params.push(parseInt(userId), limit, offset);
-    } else {
-      query += ' ORDER BY job_id LIMIT ? OFFSET ?';
-      params.push(limit, offset);
+      const interactedJobIds = getUserInteractedJobIds(parseInt(userId));
+      jobs = jobs.filter(job => !interactedJobIds.includes(job.job_id));
     }
 
-    const jobs = db.prepare(query).all(...params) as Job[];
+    // ソートとページネーション
+    jobs = jobs
+      .sort((a, b) => {
+        // match_scoreで降順ソート
+        const scoreA = a.match_score || 0;
+        const scoreB = b.match_score || 0;
+        return scoreB - scoreA;
+      })
+      .slice(offset, offset + limit);
 
     return NextResponse.json({
       jobs,
@@ -42,4 +41,3 @@ export async function GET(request: NextRequest) {
     );
   }
 }
-
