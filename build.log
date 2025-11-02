@@ -1,0 +1,39 @@
+
+> job-swipe-app@0.1.0 build
+> npm run prepare-data && next build
+
+
+> job-swipe-app@0.1.0 prepare-data
+> node -e "if(require('fs').existsSync('data/jobs.json')&&require('fs').statSync('data/jobs.json').size>1024){console.log('✅ jobs.json exists, skipping');process.exit(0);}"||tsx scripts/export-json.ts
+
+✅ jobs.json exists, skipping
+  ▲ Next.js 14.2.5
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/4) ...
+   Generating static pages (1/4) 
+   Generating static pages (2/4) 
+   Generating static pages (3/4) 
+ ✓ Generating static pages (4/4)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                              Size     First Load JS
+┌ ○ /                                    57.7 kB         145 kB
+├ ○ /_not-found                          871 B          87.9 kB
+├ ƒ /api/interactions                    0 B                0 B
+├ ƒ /api/interactions/[userId]           0 B                0 B
+├ ƒ /api/jobs                            0 B                0 B
+└ ƒ /api/jobs/[id]                       0 B                0 B
++ First Load JS shared by all            87 kB
+  ├ chunks/23-3ffe14828bac38ed.js        31.5 kB
+  ├ chunks/fd9d1056-844a5cc198651369.js  53.6 kB
+  └ other shared chunks (total)          1.86 kB
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

@@ -15,12 +15,29 @@ function exportToJson() {
     fs.mkdirSync(dataDir, { recursive: true });
   }
 
+  // JSONファイルが既に存在する場合はスキップ（CI/CD環境では不要）
+  if (fs.existsSync(jsonPath)) {
+    const stats = fs.statSync(jsonPath);
+    // ファイルサイズが1KB以上の場合、既に有効なデータがあると判断
+    if (stats.size > 1024) {
+      console.log('✅ jobs.json already exists, skipping export');
+      return;
+    }
+  }
+
   // SQLiteデータベースが存在しない場合は、空のJSONファイルを作成
   if (!fs.existsSync(dbPath)) {
-    console.log('⚠️  SQLite database not found, creating empty JSON file');
-    const emptyData = { jobs: [], users: [] };
-    fs.writeFileSync(jsonPath, JSON.stringify(emptyData, null, 2));
-    console.log('✅ Created empty jobs.json');
+    console.log('⚠️  SQLite database not found');
+    
+    // JSONファイルが存在しない場合のみ空のファイルを作成
+    if (!fs.existsSync(jsonPath)) {
+      console.log('⚠️  jobs.json not found, creating empty JSON file');
+      const emptyData = { jobs: [], users: [] };
+      fs.writeFileSync(jsonPath, JSON.stringify(emptyData, null, 2));
+      console.log('✅ Created empty jobs.json');
+    } else {
+      console.log('✅ Using existing jobs.json');
+    }
     return;
   }
 
@@ -42,10 +59,15 @@ function exportToJson() {
     db.close();
   } catch (error) {
     console.error('❌ Error exporting to JSON:', error);
-    // エラーが発生した場合でも、空のJSONファイルを作成
-    const emptyData = { jobs: [], users: [] };
-    fs.writeFileSync(jsonPath, JSON.stringify(emptyData, null, 2));
-    console.log('✅ Created empty jobs.json as fallback');
+    // エラーが発生した場合でも、既存のJSONファイルがあればそれを使用
+    if (fs.existsSync(jsonPath)) {
+      console.log('✅ Using existing jobs.json as fallback');
+    } else {
+      // エラーが発生した場合でも、空のJSONファイルを作成
+      const emptyData = { jobs: [], users: [] };
+      fs.writeFileSync(jsonPath, JSON.stringify(emptyData, null, 2));
+      console.log('✅ Created empty jobs.json as fallback');
+    }
   }
 }
 
