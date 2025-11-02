@@ -3,6 +3,13 @@
 export interface Job {
   job_id: number;
   job_requirements: string;
+  job_title?: string;
+  company_name?: string;
+  location?: string;
+  job_description?: string;
+  salary_range?: string;
+  employment_type?: string;
+  experience_level?: string;
   match_score?: number;
   recommended?: number;
 }

@@ -11,11 +11,11 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '10');
     const offset = parseInt(searchParams.get('offset') || '0');
 
-    let jobs: Job[] = getJobs();
+    let jobs: Job[] = await getJobs();
 
     // ユーザーが指定されている場合、既にインタラクションした求人を除外
     if (userId) {
-      const interactedJobIds = getUserInteractedJobIds(parseInt(userId));
+      const interactedJobIds = await getUserInteractedJobIds(parseInt(userId));
       jobs = jobs.filter(job => !interactedJobIds.includes(job.job_id));
     }
 

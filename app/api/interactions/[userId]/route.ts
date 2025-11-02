@@ -18,7 +18,7 @@ export async function GET(
       );
     }
 
-    const interactions = getUserInteractions(userId);
+    const interactions = await getUserInteractions(userId);
 
     // getUserInteractionsは既にタイムスタンプで降順ソートされている
 

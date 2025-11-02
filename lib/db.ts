@@ -17,6 +17,13 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS jobs (
     job_id INTEGER PRIMARY KEY,
     job_requirements TEXT NOT NULL,
+    job_title TEXT,
+    company_name TEXT,
+    location TEXT,
+    job_description TEXT,
+    salary_range TEXT,
+    employment_type TEXT,
+    experience_level TEXT,
     match_score REAL,
     recommended INTEGER DEFAULT 0
   );

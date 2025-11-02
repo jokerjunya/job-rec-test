@@ -45,3 +45,10 @@ next-env.d.ts
 
 # jobs.json is included in repo (needed for Netlify deployment)
 
+# Firebase
+firebase-service-account.json
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+*.orig.*

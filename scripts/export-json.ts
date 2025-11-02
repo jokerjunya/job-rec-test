@@ -15,12 +15,16 @@ function exportToJson() {
     fs.mkdirSync(dataDir, { recursive: true });
   }
 
+  // 環境変数で強制エクスポートを制御
+  const forceExport = process.env.FORCE_EXPORT === 'true';
+
   // JSONファイルが既に存在する場合はスキップ（CI/CD環境では不要）
-  if (fs.existsSync(jsonPath)) {
+  if (!forceExport && fs.existsSync(jsonPath)) {
     const stats = fs.statSync(jsonPath);
     // ファイルサイズが1KB以上の場合、既に有効なデータがあると判断
     if (stats.size > 1024) {
       console.log('✅ jobs.json already exists, skipping export');
+      console.log('   💡 強制的にエクスポートするには: FORCE_EXPORT=true npm run prepare-data');
       return;
     }
   }

@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     }
 
     // インタラクションを保存
-    saveInteraction(user_id, job_id, action);
+    await saveInteraction(user_id, job_id, action);
 
     return NextResponse.json({
       success: true,
@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    let interactions = getUserInteractions(parseInt(userId));
+    let interactions = await getUserInteractions(parseInt(userId));
 
     if (jobId) {
       interactions = interactions.filter(i => i.job_id === parseInt(jobId));
